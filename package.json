@@ -1,0 +1,18 @@
+{
+  "name": "@osionos/outbox-ledger",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Offline-first confirmed-sync ledger: records the stamp last successfully written per entity, so pending writes survive a reload during an outage and nothing made offline is lost. Storage-key agnostic, zero dependencies.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --experimental-strip-types tests/*.test.ts",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
