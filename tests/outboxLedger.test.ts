@@ -88,6 +88,16 @@ test("loadLedger returns {} when the stored value is not an object", () => {
   assert.deepEqual(loadLedger("k"), {});
 });
 
+test("loadLedger returns {} for a stored array, so confirmations persist again", () => {
+  const store = installMemoryStorage();
+  store.set("k", "[]");
+  const ledger = loadLedger("k");
+  assert.equal(Array.isArray(ledger), false);
+  ledger["a"] = "s1";
+  saveLedger("k", ledger);
+  assert.deepEqual(loadLedger("k"), { a: "s1" });
+});
+
 test("saveLedger swallows storage failures (quota / private mode)", () => {
   (globalThis as { localStorage?: unknown }).localStorage = {
     getItem: () => null,

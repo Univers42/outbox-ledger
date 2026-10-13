@@ -26,7 +26,9 @@ export function loadLedger(key: string): SyncLedger {
   try {
     const raw = globalThis.localStorage?.getItem(key);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
-    return parsed && typeof parsed === "object" ? (parsed as SyncLedger) : {};
+    // An array is an object too, but ids set on it are dropped by JSON.stringify: a ledger
+    // stored as "[]" (osionos' page cache once overwrote it) would never persist again.
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as SyncLedger) : {};
   } catch {
     return {};
   }
