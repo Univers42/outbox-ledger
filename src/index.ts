@@ -28,8 +28,10 @@ export type SyncLedger = Record<string, string>;
 // live demo origin sat at 96% of its quota with these writes failing silently (2026-10-14). So
 // each storage object keeps this session's copy of every key saved through it, and a load answers
 // from that first. Keyed by the storage object: a test's fresh stub starts clean.
-// Ponytail: a tab no longer reads another tab's confirmations within a session. It needs none:
-// its own pages only look pending when its own store changed them.
+// Ponytail: a tab no longer reads another tab's confirmations within a session, and the disk copy
+// is last-writer-wins: the tab that saves last writes its whole ledger over the other's. A fresh
+// tab can then find an older stamp there and republish an older body over a newer confirmed edit
+// (devil C2, two tabs). Saving a merge onto a fresh disk read is the planned fix.
 const sessionCopies = new WeakMap<object, Map<string, SyncLedger>>();
 
 function storageOrNull(): Storage | null {
