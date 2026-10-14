@@ -143,3 +143,14 @@ test("a refused save makes room once and keeps the retry", () => {
   assert.equal(rooms, 1);
   assert.equal(store.get("k"), JSON.stringify({ a: "s1" }));
 });
+
+// Two tabs share one storage. Tab B confirms its edit of "p" (stamp s2) on disk; tab A still holds
+// its own copy at s1 and never changed it. Read back from disk, B's confirmation made A's copy look
+// pending, and A published it over B's newer edit: the server takes the client's updatedAt as given.
+test("another tab's confirmation on disk does not make this tab republish the copy it never changed", () => {
+  const store = installMemoryStorage();
+  saveLedger("k", { p: "s1" }); // tab A, after its hydrate
+  store.set("k", JSON.stringify({ p: "s2" })); // tab B's flush, through its own module
+  const { toPublish } = computeSyncActions(new Map([["p", "s1"]]), loadLedger("k"));
+  assert.deepEqual(toPublish, []);
+});
