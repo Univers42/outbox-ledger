@@ -113,3 +113,33 @@ test("works with no localStorage at all (SSR / worker)", () => {
   assert.deepEqual(loadLedger("k"), {});
   assert.doesNotThrow(() => saveLedger("k", { a: "s1" }));
 });
+
+// osionos' live demo origin, 2026-10-14: every outbox flush reloads the ledger, and with the
+// origin full each save was refused silently — the reload brought back confirmations long gone,
+// and pages already confirmed were published again over newer edits made elsewhere.
+test("a save the storage refuses still answers the next load: the session copy, not the stale one", () => {
+  const store = installMemoryStorage();
+  saveLedger("k", { a: "s1" });
+  const storage = (globalThis as { localStorage: Storage }).localStorage;
+  storage.setItem = () => {
+    throw new Error("QuotaExceededError");
+  };
+  assert.equal(saveLedger("k", { a: "s2" }), false);
+  assert.equal(store.get("k"), JSON.stringify({ a: "s1" }));
+  assert.deepEqual(loadLedger("k"), { a: "s2" });
+});
+
+test("a refused save makes room once and keeps the retry", () => {
+  const store = installMemoryStorage();
+  const storage = (globalThis as { localStorage: Storage }).localStorage;
+  const write = storage.setItem.bind(storage);
+  let full = true;
+  storage.setItem = (key: string, value: string) => {
+    if (full) throw new Error("QuotaExceededError");
+    write(key, value);
+  };
+  let rooms = 0;
+  assert.equal(saveLedger("k", { a: "s1" }, () => { rooms += 1; full = false; }), true);
+  assert.equal(rooms, 1);
+  assert.equal(store.get("k"), JSON.stringify({ a: "s1" }));
+});
